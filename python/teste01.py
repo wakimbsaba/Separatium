@@ -1,4 +1,4 @@
-import Separatium
+import Sep
 
 # Test 001
 
@@ -9,4 +9,4 @@ Ce = [[0.0, 0.0],[0.0, 0.0]]
 
 X = [[2.0, 4.0],[3.0, 6.0]]
 
-separatium(p, H, Ce, D, X, 2)
+Sep.separatium(p, H, Ce, D, X, 2)
