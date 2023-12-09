@@ -1,0 +1,11 @@
+Candidato	Tempo_Experiencia	Qtde_Cursos_Especializacoes	Idade	Area_Formacao	Salario_Atual	Nivel_Hierarquico_Atual
+Ana	9	9	33	1	9500	2
+Beatriz	3	4	26	2	6000	1
+Carlos	10	7	34	3	8000	2
+Fernando	8	2	32	2	7300	2
+João	1	3	23	1	5800	1
+Mariana	11	1	35	2	6400	1
+Paula	4	3	25	3	7000	2
+Pedro	9	0	30	3	6500	1
+Ronaldo	2	5	25	2	6200	1
+Sueli	12	8	38	1	8300	2
