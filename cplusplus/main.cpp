@@ -1,10 +1,105 @@
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <cstring>
+#include <iostream>
 #include <math.h>
 #include <vector>
 #include <iomanip>
 #include <stdio.h>
+#include <algorithm> // std::min_element
+#include <iterator>  // std::begin, std::end
+
 
 using namespace std;
+
+
+vector<vector<double>> getPointFromFile(string fileName, vector<string> &header, bool normalized=true)
+{
+	
+    fstream new_file;
+    new_file.open(fileName.c_str(), ios::in); 
+	
+	vector<vector<double> > X;
+	
+    if (new_file.is_open()) 
+	{ 
+        string sa;
+		int line = 0;
+        while (getline(new_file, sa)) 
+		{ 
+            cout << sa << "\n";
+			const char delimiter[] = " \t";
+			char *token = strtok((char*)sa.c_str(), delimiter);
+			
+			vector<double> temp;
+			  int indice = 0;
+			  while (token != NULL) 
+			  {
+				//std::cout << token << std::endl;
+				try
+				{
+					if (indice == 0 && line > 0)
+						header.push_back(token);
+					else
+					{
+						double x = stold(token);
+						temp.push_back(x);	
+					}
+				}
+				catch(...)
+				{
+					cout<<"ERROR"<<endl;
+				}
+				
+				// Move to the next token
+				token = strtok(NULL, delimiter);
+				indice++;
+			  }
+			
+			if(temp.size() > 0)
+			  X.push_back(temp);
+			line++;
+        }
+        // Close the file object.
+        new_file.close(); 
+
+    }	
+	
+	int coluna = X.size();
+	int linha = X[0].size();
+	vector<vector<double> > R;
+
+    for (int i = 0; i < X[0].size(); i++) 
+	{
+	  vector<double> temp(coluna, 0);
+	  R.push_back(temp);
+      for (int j = 0; j < X.size(); j++)
+	  {
+		  R[i][j] = X[j][i];
+	  }
+    }
+
+	if(normalized == true)
+	{
+		for (int i = 0; i < R.size(); i++) 
+		{
+			double minimum = *std::min_element(R[i].begin(), R[i].end());
+			double maximum = *std::max_element(R[i].begin(), R[i].end());
+
+			for (int j = 0; j < R[i].size(); j++)
+			{
+				R[i][j] = (R[i][j] - minimum)/(maximum - minimum);
+			}
+		}
+	}
+
+	
+	return R;
+}
+
+
+
 
 void separatium_v0(  vector<vector<double>> &p,
               vector<double> &CX,
@@ -103,14 +198,10 @@ void separatium(   vector<vector<double>> &p,
                   vector<vector<double>> &X,
                   int iteracoes)
 {
-  int i = 0;
-  while(i < iteracoes)
-  {
-    
+
     std::cout << " ------------------------------------------------\n";
-    std::cout << "         ITERACAO ["<< i << "] \n";
-    std::cout << " ------------------------------------------------\n";
-    for (int i = 0; i < X.size(); i++) {
+    for (int i = 0; i < X.size(); i++) 
+	{
       std::cout << " X[" << i << "]\t";
       for (int j = 0; j < X[i].size(); j++)
         printf("%f|", X[i][j]);
@@ -118,20 +209,23 @@ void separatium(   vector<vector<double>> &p,
     }
 
     std::cout << " ------------------------------------------------\n";
-    for (int i = 0; i < p.size(); i++) {
+    for (int i = 0; i < p.size(); i++) 
+	{
       std::cout << " p [" << i << "]\t";
       for (int j = 0; j < p[i].size(); j++)
         printf("%f|", p[i][j]);
       std::cout << endl;
     }
-  std::cout << " ------------------------------------------------\n";
-  for (int i = 0; i < H.size(); i++) {
-    std::cout << " H [" << i << "]\t";
-    for (int j = 0; j < H[i].size(); j++)
-      printf("%f|", H[i][j]);
-    std::cout << endl;
-  }
+	std::cout << " ------------------------------------------------\n";
 
+  int i = 0;
+  while(i < iteracoes)
+  {
+    
+    std::cout << " ------------------------------------------------\n";
+    std::cout << "         ITERACAO ["<< i << "] \n";
+    std::cout << " ------------------------------------------------\n";
+	
     std::cout << " ------------------------------------------------\n";
     std::cout << " CALCULANDO Ce \n";
     int Probabilidades = p.size();
@@ -205,510 +299,616 @@ void separatium(   vector<vector<double>> &p,
     i++;
   }
 }
-int main() 
+int main(int argc, char**argv)
 {
-	int exemplo = 3;
 	
-	if(exemplo == 1 )
+	if(argc > 1)
 	{
+		
+			int qtd_dimensoes = -1;
+			int qtd_probab = stol(argv[2]);
+			int qtd_pontos = -1;
+			int qtd_iteracoes = stol(argv[3]);
+
+			vector<vector<double>> p;
+			vector<vector<double>> Ce;
+			vector<vector<double>> D;
+			vector<vector<double>> X;
 			
-		vector<vector<double>>p;
-		vector<double> CX;
-		vector<double> CY;
-		vector<vector<double>> D;
-		//vector<vector<double>> &H = p;
-		vector<double> X;
-		vector<double> Y;
-		
-		vector<double> vecTemp;
-		vector<double> amo1({0.70, 0.20});
-		vector<double> amo2({0.30, 0.80});
-		p.push_back(amo1);
-		p.push_back(amo2);
-		
-		D.push_back(amo1);
-		D.push_back(amo2);
-		
-		double aX[] = {2.0, 4.0};
-		X.insert(X.begin(), aX, aX + 2);
-		double aY[] = {3.0, 6.0};
-		Y.insert(Y.begin(), aY, aY + 2);
-		
-		double Zero[] = {0.0, 0.0};
-		CX.insert(CX.begin(), Zero, Zero + 2);
-		CY.insert(CY.begin(), Zero, Zero + 2);
-		
-		separatium_v0(p,CX,CY,D,X,Y, 2);
-	
-	}
-	if(exemplo == 2 )
-	{
-		int qtd_dimensoes = -1;
-		int qtd_pontos = -1;
-		int qtd_probab = 2;
-		int qtd_iteracoes = 4;
+			// ------------------------
+			// DEFINIÇÃO DOS PONTOS ...
+			// ------------------------
 
-		vector<vector<double>> p;
-		vector<vector<double>> Ce;
-		vector<vector<double>> D;
-		vector<vector<double>> X;
-		
-		// ------------------------
-		// DEFINIÇÃO DOS PONTOS ...
-		// ------------------------
+			string fileName(argv[1]);
+			vector<string> header;
+			X = getPointFromFile(fileName, header);		
+			qtd_dimensoes = X.size();
+			if ( X.size() > 0)
+				qtd_pontos = X[0].size();	
 
-
-		// ------------------------
-		//  f(x) = Himmelblau's ...
-		// ------------------------
-		X.resize(2);
-
-		 X[0].push_back(1.0);
-		 X[0].push_back(3.0);
-		 X[0].push_back(6.0);
-		 X[0].push_back(8.0);
-	 
-		 X[1].push_back(2.0);
-		 X[1].push_back(4.0);
-		 X[1].push_back(7.0);
-		 X[1].push_back(9.0);
-		 
-		qtd_dimensoes = X.size();
-		
-		if ( X.size() > 0)
-			qtd_pontos = X[0].size();
-
-		p.resize(qtd_probab);		
-
-		p[0].push_back(0.7);
-		p[0].push_back(0.8);
-		p[0].push_back(0.1);
-		p[0].push_back(0.3);
-
-		p[1].push_back(0.3);
-		p[1].push_back(0.2);
-		p[1].push_back(0.9);
-		p[1].push_back(0.7);
-
-		vector<vector<double>> H (p);
-
-		for (int i=0; i < qtd_probab; i++)
-			D.push_back(p[i]);
-
-		for(int i=0; i< qtd_dimensoes; i++)
-		{
-		  vector<double> Temp (qtd_probab, 0.0);
-		  Ce.push_back(Temp);
-		}
-		
-		separatium(p, H, Ce, D, X, qtd_iteracoes);
-		
-		
-		std::cout << " ------------------------------------------------\n";
-		
-		int Probabilidades = p.size();
-		int Pontos = 0;
-		if (Probabilidades > 0)
-			Pontos = p[0].size();
-		vector<int> PontoEscolhido(Pontos,0);
-		for (int j = 0; j < Pontos; j++) 
-		{
-			double maior = 0.0;
-			for (int ip = 0; ip < Probabilidades; ip++) 
+			// -------------------------------------------------
+			// DEFINIÇÃO DA PROBABILIDADE INICIAL, ALEATORIA ...
+			// -------------------------------------------------
+			p.resize(qtd_probab);
+			srand (time(NULL));
+			for (int i=0; i < qtd_probab; i++)
 			{
-				if (p[ip][j] >= maior)
+				p[i].reserve(qtd_pontos);
+				for (int j=0; j < qtd_pontos; j++)
 				{
-					maior = p[ip][j];
-					PontoEscolhido[j] = ip;				
+					p[i].push_back(((double) rand() / (RAND_MAX)));
 				}
 			}
-		}
-		
-		std::cout << " Ponto|Probab\n";
-		for (int k = 0; k < Pontos; k++) 
-			printf("[%2d] - [%2d]\n", k, PontoEscolhido[k]);
-		std::cout << " ------------------------------------------------\n";			
-		
-	
-	}
-	if(exemplo == 3 )
-	{
-		int qtd_dimensoes = -1;
-		int qtd_pontos = -1;
-		int qtd_probab = 2;
-		int qtd_iteracoes = 6;
+			vector<vector<double>> H (p);
 
-		vector<vector<double>> p;
-		vector<vector<double>> Ce;
-		vector<vector<double>> D;
-		vector<vector<double>> X;
-		
-		// ------------------------
-		// DEFINIÇÃO DOS PONTOS ...
-		// ------------------------
+			for (int i=0; i < qtd_probab; i++)
+				D.push_back(p[i]);
 
-
-		// ------------------------
-		//  f(x) = Himmelblau's ...
-		// ------------------------
-		X.resize(2);
-
-		 X[0].push_back(3.0);
-		 X[0].push_back(0.0);
-		 X[0].push_back(7.0);
-		 X[0].push_back(8.0);
-		 X[0].push_back(9.0);
-		 X[0].push_back(1.0);
-		 X[0].push_back(2.0);
-		 X[0].push_back(6.0);
-	 
-		 X[1].push_back(2.0);
-		 X[1].push_back(3.0);
-		 X[1].push_back(6.0);
-		 X[1].push_back(7.0);
-		 X[1].push_back(8.0);
-		 X[1].push_back(1.0);
-		 X[1].push_back(1.0);
-		 X[1].push_back(9.0);
-		 
-		qtd_dimensoes = X.size();
-		
-		if ( X.size() > 0)
-			qtd_pontos = X[0].size();
-
-		p.resize(qtd_probab);		
-
-		p[0].push_back(0.8);
-		p[0].push_back(0.7);
-		p[0].push_back(0.2);
-		p[0].push_back(0.1);
-		p[0].push_back(0.3);
-		p[0].push_back(0.7);
-		p[0].push_back(0.65);
-		p[0].push_back(0.4);
-
-		p[1].push_back(0.2);
-		p[1].push_back(0.3);
-		p[1].push_back(0.8);
-		p[1].push_back(0.9);
-		p[1].push_back(0.8);
-		p[1].push_back(0.3);
-		p[1].push_back(0.35);
-		p[1].push_back(0.6);
-
-		vector<vector<double>> H (p);
-
-		for (int i=0; i < qtd_probab; i++)
-			D.push_back(p[i]);
-
-		for(int i=0; i< qtd_dimensoes; i++)
-		{
-		  vector<double> Temp (qtd_probab, 0.0);
-		  Ce.push_back(Temp);
-		}
-		
-		separatium(p, H, Ce, D, X, qtd_iteracoes);
-		
-		
-		std::cout << " ------------------------------------------------\n";
-		
-		int Probabilidades = p.size();
-		int Pontos = 0;
-		if (Probabilidades > 0)
-			Pontos = p[0].size();
-		vector<int> PontoEscolhido(Pontos,0);
-		for (int j = 0; j < Pontos; j++) 
-		{
-			double maior = 0.0;
-			for (int ip = 0; ip < Probabilidades; ip++) 
+			for(int i=0; i< qtd_dimensoes; i++)
 			{
-				if (p[ip][j] >= maior)
+			  vector<double> Temp (qtd_probab, 0.0);
+			  Ce.push_back(Temp);
+			}
+			
+			separatium(p, H, Ce, D, X, qtd_iteracoes);
+			
+			
+			std::cout << " ------------------------------------------------\n";
+			
+			int Probabilidades = p.size();
+			int Pontos = 0;
+			if (Probabilidades > 0)
+				Pontos = p[0].size();
+			vector<int> PontoEscolhido(Pontos,0);
+			for (int j = 0; j < Pontos; j++) 
+			{
+				double maior = 0.0;
+				for (int ip = 0; ip < Probabilidades; ip++) 
 				{
-					maior = p[ip][j];
-					PontoEscolhido[j] = ip;				
+					if (p[ip][j] >= maior)
+					{
+						maior = p[ip][j];
+						PontoEscolhido[j] = ip;				
+					}
 				}
 			}
-		}
-		
-		std::cout << " Ponto|Probab\n";
-		for (int k = 0; k < Pontos; k++) 
-			printf("[%2d] - [%2d]\n", k, PontoEscolhido[k]);
-		std::cout << " ------------------------------------------------\n";			
-		
-	
+			
+//			std::cout << " Ponto|Probab\n";
+//			for (int k = 0; k < Pontos; k++) 
+//				printf("[%s] - [%2d]\n", header[k].c_str(), PontoEscolhido[k]);
+			std::cout << "Group | Name\n";
+			std::cout << "-----------------\n";
+			vector<vector<string> > group (qtd_probab);
+			for (int k = 0; k < Pontos; k++)
+			{
+				//printf("[%2d] - [%s]\n", PontoEscolhido[k], header[k].c_str());
+				group[PontoEscolhido[k]].push_back(header[k]);
+			}
+			
+			for (int k = 0; k < qtd_probab; k++)
+			{
+				for (int w = 0; w < group[k].size(); w++)
+					printf("[%2d] - [%s]\n", k, group[k][w].c_str());
+					//cout<< "[" << k << "] " << group[k][w].c_str();
+				//cout<<endl;
+			}
+
+			std::cout << " ------------------------------------------------\n";			
 	}
 	else
 	{
-		int qtd_dimensoes = -1;
-		int qtd_probab = 4;
-		int qtd_pontos = -1;
-		int qtd_iteracoes = 20;
-
-		vector<vector<double>> p;
-		vector<vector<double>> Ce;
-		vector<vector<double>> D;
-		vector<vector<double>> X;
+		int exemplo = 1;
 		
-		// ------------------------
-		// DEFINIÇÃO DOS PONTOS ...
-		// ------------------------
-
-
-		// ------------------------
-		//  f(x) = Himmelblau's ...
-		// ------------------------
-		X.resize(3);
-
-		 X[0].push_back(-4);
-		 X[0].push_back(-3.5);
-		 X[0].push_back(-3);
-		 X[0].push_back(3);
-		 X[0].push_back(3.5);
-		 X[0].push_back(4);
-		 X[0].push_back(3);
-		 X[0].push_back(3.5);
-		 X[0].push_back(4);
-		 X[0].push_back(2.5);
-		 X[0].push_back(3);
-		 X[0].push_back(3.5);
-		 X[0].push_back(-3);
-		 X[0].push_back(-2.5);
-		 X[0].push_back(-2);
-
-	 
-		 X[1].push_back(-3.5);
-		 X[1].push_back(-3.5);
-		 X[1].push_back(-3.5);
-		 X[1].push_back(-2);
-		 X[1].push_back(-2);
-		 X[1].push_back(-2);
-		 X[1].push_back(-1.5);
-		 X[1].push_back(-1.5);
-		 X[1].push_back(-1.5);
-		 X[1].push_back(2);
-		 X[1].push_back(2);
-		 X[1].push_back(2);
-		 X[1].push_back(3);
-		 X[1].push_back(3);
-		 X[1].push_back(3);
-
-		 X[2].push_back(0.69);
-		 X[2].push_back(0.24);
-		 X[2].push_back(0.00);
-		 X[2].push_back(0.07);
-		 X[2].push_back(0.38);
-		 X[2].push_back(0.92);
-		 X[2].push_back(0.13);
-		 X[2].push_back(0.45);
-		 X[2].push_back(1.00);
-		 X[2].push_back(0.17);
-		 X[2].push_back(0.47);
-		 X[2].push_back(0.96);
-		 X[2].push_back(0.61);
-		 X[2].push_back(0.27);
-		 X[2].push_back(0.07);
-		 
-		 
-		 
-		// ---------------------
-		//  ff(x) = sin(x)/x ...
-		// ---------------------
-		/*X.resize(2);
-
-		 X[0].push_back(0.000);
-		 X[0].push_back(0.025);
-		 X[0].push_back(0.050);
-		 X[0].push_back(0.075);
-		 X[0].push_back(0.100);
-		 X[0].push_back(0.125);
-		 X[0].push_back(0.150);
-		 X[0].push_back(0.175);
-		 X[0].push_back(0.200);
-		 X[0].push_back(0.225);
-		 X[0].push_back(0.250);
-		 X[0].push_back(0.275);
-		 X[0].push_back(0.300);
-		 X[0].push_back(0.325);
-		 X[0].push_back(0.350);
-		 X[0].push_back(0.375);
-		 X[0].push_back(0.400);
-		 X[0].push_back(0.425);
-		 X[0].push_back(0.450);
-		 X[0].push_back(0.475);
-		 X[0].push_back(0.500);
-		 X[0].push_back(0.525);
-		 X[0].push_back(0.550);
-		 X[0].push_back(0.575);
-		 X[0].push_back(0.600);
-		 X[0].push_back(0.625);
-		 X[0].push_back(0.650);
-		 X[0].push_back(0.675);
-		 X[0].push_back(0.700);
-		 X[0].push_back(0.725);
-		 X[0].push_back(0.750);
-		 X[0].push_back(0.775);
-		 X[0].push_back(0.800);
-		 X[0].push_back(0.825);
-		 X[0].push_back(0.850);
-		 X[0].push_back(0.875);
-		 X[0].push_back(0.900);
-		 X[0].push_back(0.925);
-		 X[0].push_back(0.950);
-		 X[0].push_back(0.975);
-		 X[0].push_back(1.000);
-							 
-		 X[1].push_back(0.046);
-		 X[1].push_back(0.008);
-		 X[1].push_back(-0.042);
-		 X[1].push_back(-0.057);
-		 X[1].push_back(-0.018);
-		 X[1].push_back(0.043);
-		 X[1].push_back(0.071);
-		 X[1].push_back(0.032);
-		 X[1].push_back(-0.045);
-		 X[1].push_back(-0.091);
-		 X[1].push_back(-0.054);
-		 X[1].push_back(0.046);
-		 X[1].push_back(0.124);
-		 X[1].push_back(0.094);
-		 X[1].push_back(-0.047);
-		 X[1].push_back(-0.192);
-		 X[1].push_back(-0.189);
-		 X[1].push_back(0.047);
-		 X[1].push_back(0.455);
-		 X[1].push_back(0.841);
-		 X[1].push_back(1.000);
-		 X[1].push_back(0.841);
-		 X[1].push_back(0.455);
-		 X[1].push_back(0.047);
-		 X[1].push_back(-0.189);
-		 X[1].push_back(-0.192);
-		 X[1].push_back(-0.047);
-		 X[1].push_back(0.094);
-		 X[1].push_back(0.124);
-		 X[1].push_back(0.046);
-		 X[1].push_back(-0.054);
-		 X[1].push_back(-0.091);
-		 X[1].push_back(-0.045);
-		 X[1].push_back(0.032);
-		 X[1].push_back(0.071);
-		 X[1].push_back(0.043);
-		 X[1].push_back(-0.018);
-		 X[1].push_back(-0.057);
-		 X[1].push_back(-0.042);
-		 X[1].push_back(0.008);
-		 X[1].push_back(0.046);*/
-		 
-		 
-		 
-		qtd_dimensoes = X.size();
-		
-		if ( X.size() > 0)
-			qtd_pontos = X[0].size();	
-
-	/*
-		p[0].push_back(0.8);
-		p[0].push_back(0.7);
-		p[0].push_back(0.2);
-		p[0].push_back(0.1);
-		p[0].push_back(0.3);
-		p[0].push_back(0.7);
-		p[0].push_back(0.65);
-		p[0].push_back(0.4);
-
-		p[1].push_back(0.2);
-		p[1].push_back(0.3);
-		p[1].push_back(0.8);
-		p[1].push_back(0.9);
-		p[1].push_back(0.8);
-		p[1].push_back(0.3);
-		p[1].push_back(0.35);
-		p[1].push_back(0.6);
-	*/
-		// -------------------------------------------------
-		// DEFINIÇÃO DA PROBABILIDADE INICIAL, ALEATORIA ...
-		// -------------------------------------------------
-		p.resize(qtd_probab);
-		srand (time(NULL));
-		for (int i=0; i < qtd_probab; i++)
+		if(exemplo == 1 )
 		{
-			p[i].reserve(qtd_pontos);
-			for (int j=0; j < qtd_pontos; j++)
+				
+			vector<vector<double>>p;
+			vector<double> CX;
+			vector<double> CY;
+			vector<vector<double>> D;
+			//vector<vector<double>> &H = p;
+			vector<double> X;
+			vector<double> Y;
+			
+			vector<double> vecTemp;
+			vector<double> amo1({0.70, 0.20});
+			vector<double> amo2({0.30, 0.80});
+			p.push_back(amo1);
+			p.push_back(amo2);
+			
+			D.push_back(amo1);
+			D.push_back(amo2);
+			
+			double aX[] = {2.0, 4.0};
+			X.insert(X.begin(), aX, aX + 2);
+			double aY[] = {3.0, 6.0};
+			Y.insert(Y.begin(), aY, aY + 2);
+			
+			double Zero[] = {0.0, 0.0};
+			CX.insert(CX.begin(), Zero, Zero + 2);
+			CY.insert(CY.begin(), Zero, Zero + 2);
+			
+			separatium_v0(p,CX,CY,D,X,Y, 2);
+			
+			cout<<"FIM-------------------";
+			
+			return 0;
+		
+		}
+		if(exemplo == 2 )
+		{
+			int qtd_dimensoes = -1;
+			int qtd_pontos = -1;
+			int qtd_probab = 2;
+			int qtd_iteracoes = 4;
+
+			vector<vector<double>> p;
+			vector<vector<double>> Ce;
+			vector<vector<double>> D;
+			vector<vector<double>> X;
+			
+			// ------------------------
+			// DEFINIÇÃO DOS PONTOS ...
+			// ------------------------
+
+
+			// ------------------------
+			//  f(x) = Himmelblau's ...
+			// ------------------------
+			X.resize(2);
+
+			 X[0].push_back(1.0);
+			 X[0].push_back(3.0);
+			 X[0].push_back(6.0);
+			 X[0].push_back(8.0);
+		 
+			 X[1].push_back(2.0);
+			 X[1].push_back(4.0);
+			 X[1].push_back(7.0);
+			 X[1].push_back(9.0);
+			 
+			qtd_dimensoes = X.size();
+			
+			if ( X.size() > 0)
+				qtd_pontos = X[0].size();
+
+			p.resize(qtd_probab);		
+
+			p[0].push_back(0.7);
+			p[0].push_back(0.8);
+			p[0].push_back(0.1);
+			p[0].push_back(0.3);
+
+			p[1].push_back(0.3);
+			p[1].push_back(0.2);
+			p[1].push_back(0.9);
+			p[1].push_back(0.7);
+
+			vector<vector<double>> H (p);
+
+			for (int i=0; i < qtd_probab; i++)
+				D.push_back(p[i]);
+
+			for(int i=0; i< qtd_dimensoes; i++)
 			{
-				p[i].push_back(((double) rand() / (RAND_MAX)));
+			  vector<double> Temp (qtd_probab, 0.0);
+			  Ce.push_back(Temp);
 			}
-		}
-	  /*
-		p[0].push_back(0.1);
-		p[0].push_back(0.2);
-		p[0].push_back(0.3);
-
-		p[1].push_back(0.6);
-		p[1].push_back(0.2);
-		p[1].push_back(0.6);
-	*/
-	  
-		vector<vector<double>> H (p);
-
-		for (int i=0; i < qtd_probab; i++)
-			D.push_back(p[i]);
-
-
-		X.resize(qtd_dimensoes);
-		/*X[0].push_back(3.0);
-		X[0].push_back(0.0);
-		X[0].push_back(7.0);
-		X[0].push_back(8.0);
-		X[0].push_back(9.0);
-		X[0].push_back(1.0);
-		X[0].push_back(2.0);
-		X[0].push_back(6.0);
-
-		X[1].push_back(2.0);
-		X[1].push_back(3.0);
-		X[1].push_back(6.0);
-		X[1].push_back(7.0);
-		X[1].push_back(8.0);
-		X[1].push_back(1.0);
-		X[1].push_back(1.0);
-		X[1].push_back(9.0);*/
-
-		
-		//double Zero[] = {0.0, 0.0};
-		//CX.insert(CX.begin(), Zero, Zero + 2);
-		//CY.insert(CY.begin(), Zero, Zero + 2);
-		for(int i=0; i< qtd_dimensoes; i++)
-		{
-		  vector<double> Temp (qtd_probab, 0.0);
-		  Ce.push_back(Temp);
-		}
-		
-		separatium(p, H, Ce, D, X, qtd_iteracoes);
-		
-		
-		std::cout << " ------------------------------------------------\n";
-		
-		int Probabilidades = p.size();
-		int Pontos = 0;
-		if (Probabilidades > 0)
-			Pontos = p[0].size();
-		vector<int> PontoEscolhido(Pontos,0);
-		for (int j = 0; j < Pontos; j++) 
-		{
-			double maior = 0.0;
-			for (int ip = 0; ip < Probabilidades; ip++) 
+			
+			separatium(p, H, Ce, D, X, qtd_iteracoes);
+			
+			
+			std::cout << " ------------------------------------------------\n";
+			
+			int Probabilidades = p.size();
+			int Pontos = 0;
+			if (Probabilidades > 0)
+				Pontos = p[0].size();
+			vector<int> PontoEscolhido(Pontos,0);
+			for (int j = 0; j < Pontos; j++) 
 			{
-				if (p[ip][j] >= maior)
+				double maior = 0.0;
+				for (int ip = 0; ip < Probabilidades; ip++) 
 				{
-					maior = p[ip][j];
-					PontoEscolhido[j] = ip;				
+					if (p[ip][j] >= maior)
+					{
+						maior = p[ip][j];
+						PontoEscolhido[j] = ip;				
+					}
 				}
 			}
+			
+			std::cout << " Ponto|Probab\n";
+			for (int k = 0; k < Pontos; k++) 
+				printf("[%2d] - [%2d]\n", k, PontoEscolhido[k]);
+			std::cout << " ------------------------------------------------\n";	
+
+			return 0;			
+			
+		
+		}
+		if(exemplo == 3 )
+		{
+			int qtd_dimensoes = -1;
+			int qtd_pontos = -1;
+			int qtd_probab = 2;
+			int qtd_iteracoes = 6;
+
+			vector<vector<double>> p;
+			vector<vector<double>> Ce;
+			vector<vector<double>> D;
+			vector<vector<double>> X;
+			
+			// ------------------------
+			// DEFINIÇÃO DOS PONTOS ...
+			// ------------------------
+
+
+			// ------------------------
+			//  f(x) = Himmelblau's ...
+			// ------------------------
+			X.resize(2);
+
+			 X[0].push_back(3.0);
+			 X[0].push_back(0.0);
+			 X[0].push_back(7.0);
+			 X[0].push_back(8.0);
+			 X[0].push_back(9.0);
+			 X[0].push_back(1.0);
+			 X[0].push_back(2.0);
+			 X[0].push_back(6.0);
+		 
+			 X[1].push_back(2.0);
+			 X[1].push_back(3.0);
+			 X[1].push_back(6.0);
+			 X[1].push_back(7.0);
+			 X[1].push_back(8.0);
+			 X[1].push_back(1.0);
+			 X[1].push_back(1.0);
+			 X[1].push_back(9.0);
+			 
+			qtd_dimensoes = X.size();
+			
+			if ( X.size() > 0)
+				qtd_pontos = X[0].size();
+
+			p.resize(qtd_probab);		
+
+			p[0].push_back(0.8);
+			p[0].push_back(0.7);
+			p[0].push_back(0.2);
+			p[0].push_back(0.1);
+			p[0].push_back(0.3);
+			p[0].push_back(0.7);
+			p[0].push_back(0.65);
+			p[0].push_back(0.4);
+
+			p[1].push_back(0.2);
+			p[1].push_back(0.3);
+			p[1].push_back(0.8);
+			p[1].push_back(0.9);
+			p[1].push_back(0.8);
+			p[1].push_back(0.3);
+			p[1].push_back(0.35);
+			p[1].push_back(0.6);
+
+			vector<vector<double>> H (p);
+
+			for (int i=0; i < qtd_probab; i++)
+				D.push_back(p[i]);
+
+			for(int i=0; i< qtd_dimensoes; i++)
+			{
+			  vector<double> Temp (qtd_probab, 0.0);
+			  Ce.push_back(Temp);
+			}
+			
+			separatium(p, H, Ce, D, X, qtd_iteracoes);
+			
+			
+			std::cout << " ------------------------------------------------\n";
+			
+			int Probabilidades = p.size();
+			int Pontos = 0;
+			if (Probabilidades > 0)
+				Pontos = p[0].size();
+			vector<int> PontoEscolhido(Pontos,0);
+			for (int j = 0; j < Pontos; j++) 
+			{
+				double maior = 0.0;
+				for (int ip = 0; ip < Probabilidades; ip++) 
+				{
+					if (p[ip][j] >= maior)
+					{
+						maior = p[ip][j];
+						PontoEscolhido[j] = ip;				
+					}
+				}
+			}
+			
+			std::cout << " Ponto|Probab\n";
+			for (int k = 0; k < Pontos; k++) 
+				printf("[%2d] - [%2d]\n", k, PontoEscolhido[k]);
+			std::cout << " ------------------------------------------------\n";			
+			return 0;
+		
+		}
+		if (exemplo == 4)
+		{
+			int qtd_dimensoes = -1;
+			int qtd_probab = 4;
+			int qtd_pontos = -1;
+			int qtd_iteracoes = 20;
+
+			vector<vector<double>> p;
+			vector<vector<double>> Ce;
+			vector<vector<double>> D;
+			vector<vector<double>> X;
+			
+			// ------------------------
+			// DEFINIÇÃO DOS PONTOS ...
+			// ------------------------
+
+
+			// ------------------------
+			//  f(x) = Himmelblau's ...
+			// ------------------------
+			X.resize(3);
+
+			 X[0].push_back(-4);
+			 X[0].push_back(-3.5);
+			 X[0].push_back(-3);
+			 X[0].push_back(3);
+			 X[0].push_back(3.5);
+			 X[0].push_back(4);
+			 X[0].push_back(3);
+			 X[0].push_back(3.5);
+			 X[0].push_back(4);
+			 X[0].push_back(2.5);
+			 X[0].push_back(3);
+			 X[0].push_back(3.5);
+			 X[0].push_back(-3);
+			 X[0].push_back(-2.5);
+			 X[0].push_back(-2);
+
+		 
+			 X[1].push_back(-3.5);
+			 X[1].push_back(-3.5);
+			 X[1].push_back(-3.5);
+			 X[1].push_back(-2);
+			 X[1].push_back(-2);
+			 X[1].push_back(-2);
+			 X[1].push_back(-1.5);
+			 X[1].push_back(-1.5);
+			 X[1].push_back(-1.5);
+			 X[1].push_back(2);
+			 X[1].push_back(2);
+			 X[1].push_back(2);
+			 X[1].push_back(3);
+			 X[1].push_back(3);
+			 X[1].push_back(3);
+
+			 X[2].push_back(0.69);
+			 X[2].push_back(0.24);
+			 X[2].push_back(0.00);
+			 X[2].push_back(0.07);
+			 X[2].push_back(0.38);
+			 X[2].push_back(0.92);
+			 X[2].push_back(0.13);
+			 X[2].push_back(0.45);
+			 X[2].push_back(1.00);
+			 X[2].push_back(0.17);
+			 X[2].push_back(0.47);
+			 X[2].push_back(0.96);
+			 X[2].push_back(0.61);
+			 X[2].push_back(0.27);
+			 X[2].push_back(0.07);
+			 
+			 
+			 
+			// ---------------------
+			//  ff(x) = sin(x)/x ...
+			// ---------------------
+			/*X.resize(2);
+
+			 X[0].push_back(0.000);
+			 X[0].push_back(0.025);
+			 X[0].push_back(0.050);
+			 X[0].push_back(0.075);
+			 X[0].push_back(0.100);
+			 X[0].push_back(0.125);
+			 X[0].push_back(0.150);
+			 X[0].push_back(0.175);
+			 X[0].push_back(0.200);
+			 X[0].push_back(0.225);
+			 X[0].push_back(0.250);
+			 X[0].push_back(0.275);
+			 X[0].push_back(0.300);
+			 X[0].push_back(0.325);
+			 X[0].push_back(0.350);
+			 X[0].push_back(0.375);
+			 X[0].push_back(0.400);
+			 X[0].push_back(0.425);
+			 X[0].push_back(0.450);
+			 X[0].push_back(0.475);
+			 X[0].push_back(0.500);
+			 X[0].push_back(0.525);
+			 X[0].push_back(0.550);
+			 X[0].push_back(0.575);
+			 X[0].push_back(0.600);
+			 X[0].push_back(0.625);
+			 X[0].push_back(0.650);
+			 X[0].push_back(0.675);
+			 X[0].push_back(0.700);
+			 X[0].push_back(0.725);
+			 X[0].push_back(0.750);
+			 X[0].push_back(0.775);
+			 X[0].push_back(0.800);
+			 X[0].push_back(0.825);
+			 X[0].push_back(0.850);
+			 X[0].push_back(0.875);
+			 X[0].push_back(0.900);
+			 X[0].push_back(0.925);
+			 X[0].push_back(0.950);
+			 X[0].push_back(0.975);
+			 X[0].push_back(1.000);
+								 
+			 X[1].push_back(0.046);
+			 X[1].push_back(0.008);
+			 X[1].push_back(-0.042);
+			 X[1].push_back(-0.057);
+			 X[1].push_back(-0.018);
+			 X[1].push_back(0.043);
+			 X[1].push_back(0.071);
+			 X[1].push_back(0.032);
+			 X[1].push_back(-0.045);
+			 X[1].push_back(-0.091);
+			 X[1].push_back(-0.054);
+			 X[1].push_back(0.046);
+			 X[1].push_back(0.124);
+			 X[1].push_back(0.094);
+			 X[1].push_back(-0.047);
+			 X[1].push_back(-0.192);
+			 X[1].push_back(-0.189);
+			 X[1].push_back(0.047);
+			 X[1].push_back(0.455);
+			 X[1].push_back(0.841);
+			 X[1].push_back(1.000);
+			 X[1].push_back(0.841);
+			 X[1].push_back(0.455);
+			 X[1].push_back(0.047);
+			 X[1].push_back(-0.189);
+			 X[1].push_back(-0.192);
+			 X[1].push_back(-0.047);
+			 X[1].push_back(0.094);
+			 X[1].push_back(0.124);
+			 X[1].push_back(0.046);
+			 X[1].push_back(-0.054);
+			 X[1].push_back(-0.091);
+			 X[1].push_back(-0.045);
+			 X[1].push_back(0.032);
+			 X[1].push_back(0.071);
+			 X[1].push_back(0.043);
+			 X[1].push_back(-0.018);
+			 X[1].push_back(-0.057);
+			 X[1].push_back(-0.042);
+			 X[1].push_back(0.008);
+			 X[1].push_back(0.046);*/
+			 
+			 
+			 
+			qtd_dimensoes = X.size();
+			
+			if ( X.size() > 0)
+				qtd_pontos = X[0].size();	
+
+		/*
+			p[0].push_back(0.8);
+			p[0].push_back(0.7);
+			p[0].push_back(0.2);
+			p[0].push_back(0.1);
+			p[0].push_back(0.3);
+			p[0].push_back(0.7);
+			p[0].push_back(0.65);
+			p[0].push_back(0.4);
+
+			p[1].push_back(0.2);
+			p[1].push_back(0.3);
+			p[1].push_back(0.8);
+			p[1].push_back(0.9);
+			p[1].push_back(0.8);
+			p[1].push_back(0.3);
+			p[1].push_back(0.35);
+			p[1].push_back(0.6);
+		*/
+			// -------------------------------------------------
+			// DEFINIÇÃO DA PROBABILIDADE INICIAL, ALEATORIA ...
+			// -------------------------------------------------
+			p.resize(qtd_probab);
+			srand (time(NULL));
+			for (int i=0; i < qtd_probab; i++)
+			{
+				p[i].reserve(qtd_pontos);
+				for (int j=0; j < qtd_pontos; j++)
+				{
+					p[i].push_back(((double) rand() / (RAND_MAX)));
+				}
+			}
+		  /*
+			p[0].push_back(0.1);
+			p[0].push_back(0.2);
+			p[0].push_back(0.3);
+
+			p[1].push_back(0.6);
+			p[1].push_back(0.2);
+			p[1].push_back(0.6);
+		*/
+		  
+			vector<vector<double>> H (p);
+
+			for (int i=0; i < qtd_probab; i++)
+				D.push_back(p[i]);
+
+
+			X.resize(qtd_dimensoes);
+			/*X[0].push_back(3.0);
+			X[0].push_back(0.0);
+			X[0].push_back(7.0);
+			X[0].push_back(8.0);
+			X[0].push_back(9.0);
+			X[0].push_back(1.0);
+			X[0].push_back(2.0);
+			X[0].push_back(6.0);
+
+			X[1].push_back(2.0);
+			X[1].push_back(3.0);
+			X[1].push_back(6.0);
+			X[1].push_back(7.0);
+			X[1].push_back(8.0);
+			X[1].push_back(1.0);
+			X[1].push_back(1.0);
+			X[1].push_back(9.0);*/
+
+			
+			//double Zero[] = {0.0, 0.0};
+			//CX.insert(CX.begin(), Zero, Zero + 2);
+			//CY.insert(CY.begin(), Zero, Zero + 2);
+			for(int i=0; i< qtd_dimensoes; i++)
+			{
+			  vector<double> Temp (qtd_probab, 0.0);
+			  Ce.push_back(Temp);
+			}
+			
+			separatium(p, H, Ce, D, X, qtd_iteracoes);
+			
+			
+			std::cout << " ------------------------------------------------\n";
+			
+			int Probabilidades = p.size();
+			int Pontos = 0;
+			if (Probabilidades > 0)
+				Pontos = p[0].size();
+			vector<int> PontoEscolhido(Pontos,0);
+			for (int j = 0; j < Pontos; j++) 
+			{
+				double maior = 0.0;
+				for (int ip = 0; ip < Probabilidades; ip++) 
+				{
+					if (p[ip][j] >= maior)
+					{
+						maior = p[ip][j];
+						PontoEscolhido[j] = ip;				
+					}
+				}
+			}
+			
+			std::cout << " Ponto|Probab\n";
+			for (int k = 0; k < Pontos; k++) 
+				printf("[%2d] - [%2d]\n", k, PontoEscolhido[k]);
+			std::cout << " ------------------------------------------------\n";			
 		}
 		
-		std::cout << " Ponto|Probab\n";
-		for (int k = 0; k < Pontos; k++) 
-			printf("[%2d] - [%2d]\n", k, PontoEscolhido[k]);
-		std::cout << " ------------------------------------------------\n";			
+
 	}
+
 }
